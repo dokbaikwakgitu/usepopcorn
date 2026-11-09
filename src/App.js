@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import StarRating from "./StarRating";
 
 const average = (arr) =>
@@ -14,8 +14,9 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null);
   // const [watched, setWatched] = useState([]);
 
-  const [watched, setWatched] = useState(function () {// you gotta  pass the function to save state energy when rerendered happened since once state see the function it just ignored it instead of passing the formula which will be calculated 
-    const storedValue = localStorage.getItem("watched") || [];// the first visit is null mean watched didn't even existed yet since useEffect run after first mount completed
+  const [watched, setWatched] = useState(function () {
+    // you gotta  pass the function to save state energy when rerendered happened since once state see the function it just ignored it instead of passing the formula which will be calculated
+    const storedValue = localStorage.getItem("watched") || []; // the first visit is null mean watched didn't even existed yet since useEffect run after first mount completed
     return JSON.parse(storedValue);
   });
 
@@ -33,14 +34,14 @@ export default function App() {
     // localStorage.setItem("watched", JSON.stringify([...watched, movie]));
   }
 
-  function handleDeleteWatched(id) {  
+  function handleDeleteWatched(id) {
     setWatched(watched.filter((movie) => movie.imdbID !== id));
   }
 
   // first parameter is just plain string to be refered in local storage (refer to you browswer console ) second parameter is truning array into json
   useEffect(
     function () {
-      localStorage.setItem("watched", JSON.stringify(watched)); 
+      localStorage.setItem("watched", JSON.stringify(watched));
     },
     [watched],
   );
@@ -206,6 +207,30 @@ function Logo() {
 }
 
 function Search({ query, setQuery }) {
+  const inputEl = useRef(null); // we creating null variable---> inputEl={current: null}
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (document.activeElement === inputEl.current) return;
+        if (e.code === "Enter") {
+          inputEl.current.focus();
+          setQuery("");
+        }
+      }
+      document.addEventListener("keydown", callback);
+      return () => document.removeEventListener("keydown", callback); //any funciton returned from useEffect is not return to the code its return to react
+    },
+    [setQuery],
+  );
+
+  //automatically placed curson on first mount
+  // useEffect(function () {
+  //   const el = document.querySelector(".search");
+  //   console.log(el);
+  //   el.focus();
+  // }, []);
+
   return (
     <input
       className="search"
@@ -213,6 +238,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEl} // stpre this element into inputEl.current
     />
   );
 }
@@ -238,6 +264,15 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const [movie, setMovies] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
+
+  const countRef = useRef(0); //again lthe value here is countRef={current: 0}
+
+  useEffect(
+    function () {
+      if (userRating) countRef.current = countRef.current + 1; // setting the 0 to another value which is +1 // why doing userRating? - cuz we set the initial state to nul/0 which mean all movies is null/zero
+    },
+    [userRating],
+  );
 
   const watchedUserRating = watched.find(
     (movie) => movie.imdbID === selectedId,
@@ -267,6 +302,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      countRatingDecisions: countRef.current,
     };
 
     onAddWatched(newWatchedMovie);
