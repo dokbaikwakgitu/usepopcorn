@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import StarRating from "./StarRating";
 import { useMovies } from "./useMovies";
+import { useLocalStorageState } from "./useLocalStorageState";
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
@@ -14,11 +15,13 @@ export default function App() {
   // const [watched, setWatched] = useState([]);
   const { movies, isLoading, error } = useMovies(query); //calling a useMovies customHook and passing parameter called query while expecting movies,isLoading,error
 
-  const [watched, setWatched] = useState(function () {
-    // you gotta  pass the function to save state energy when rerendered happened since once state see the function it just ignored it instead of passing the formula which will be calculated
-    const storedValue = localStorage.getItem("watched") || []; // the first visit is null mean watched didn't even existed yet since useEffect run after first mount completed
-    return JSON.parse(storedValue);
-  });
+  const [watched, setWatched] = useLocalStorageState([], "watched");
+
+  // const [watched, setWatched] = useState(function () {
+  //   // you gotta  pass the function to save state energy when rerendered happened since once state see the function it just ignored it instead of passing the formula which will be calculated
+  //   const storedValue = localStorage.getItem("watched") || []; // the first visit is null mean watched didn't even existed yet since useEffect run after first mount completed
+  //   return JSON.parse(storedValue);
+  // });
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id)); // toggle logic
@@ -37,14 +40,6 @@ export default function App() {
   function handleDeleteWatched(id) {
     setWatched(watched.filter((movie) => movie.imdbID !== id));
   }
-
-  // first parameter is just plain string to be refered in local storage (refer to you browswer console ) second parameter is truning array into json
-  useEffect(
-    function () {
-      localStorage.setItem("watched", JSON.stringify(watched));
-    },
-    [watched],
-  );
 
   return (
     <>
