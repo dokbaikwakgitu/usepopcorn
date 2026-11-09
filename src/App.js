@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import StarRating from "./StarRating";
 import { useMovies } from "./useMovies";
 import { useLocalStorageState } from "./useLocalStorageState";
+import { useKey } from "./useKey";
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
@@ -149,20 +150,11 @@ function Logo() {
 function Search({ query, setQuery }) {
   const inputEl = useRef(null); // we creating null variable---> inputEl={current: null}
 
-  useEffect(
-    function () {
-      function callback(e) {
-        if (document.activeElement === inputEl.current) return;
-        if (e.code === "Enter") {
-          inputEl.current.focus();
-          setQuery("");
-        }
-      }
-      document.addEventListener("keydown", callback);
-      return () => document.removeEventListener("keydown", callback); //any funciton returned from useEffect is not return to the code its return to react
-    },
-    [setQuery],
-  );
+  useKey("enter", function () {
+    if (document.activeElement === inputEl.current) return;
+    inputEl.current.focus();
+    setQuery("");
+  });
 
   //automatically placed curson on first mount
   // useEffect(function () {
@@ -265,24 +257,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   console.log(isTop);
 
   //useEffect to listen to escape
-  useEffect(
-    function () {
-      function callback(e) {
-        //once it run the addeventlistener will listen for the whole document forever!!
-        if (e.code === "Escape") {
-          onCloseMovie();
-          console.log("Close");
-        }
-      }
-
-      document.addEventListener("keydown", callback);
-      return function () {
-        // cleanup function to remove event listener everytime the componennt movie detail mount so it not gonna acuumulate
-        document.removeEventListener("keydown", callback);
-      };
-    },
-    [onCloseMovie],
-  );
+  useKey("Escape", onCloseMovie);
 
   useEffect(
     function () {
